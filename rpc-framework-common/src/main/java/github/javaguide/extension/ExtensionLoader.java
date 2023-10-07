@@ -16,6 +16,8 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * refer to dubbo spi: https://dubbo.apache.org/zh-cn/docs/source_code_guide/dubbo-spi.html
+ *
+ * 请参考Dubbo SPI：https：dubbo.apache.orgzh-cndocssource_code_guidedubbo-spi.html
  */
 @Slf4j
 public final class ExtensionLoader<T> {
@@ -32,6 +34,12 @@ public final class ExtensionLoader<T> {
         this.type = type;
     }
 
+    /**
+     * 根据类型获取
+     * @param type
+     * @return
+     * @param <S>
+     */
     public static <S> ExtensionLoader<S> getExtensionLoader(Class<S> type) {
         if (type == null) {
             throw new IllegalArgumentException("Extension type should not be null.");
@@ -51,6 +59,11 @@ public final class ExtensionLoader<T> {
         return extensionLoader;
     }
 
+    /**
+     * 根据名称获取
+     * @param name
+     * @return
+     */
     public T getExtension(String name) {
         if (StringUtil.isBlank(name)) {
             throw new IllegalArgumentException("Extension name should not be null or empty.");
@@ -59,8 +72,13 @@ public final class ExtensionLoader<T> {
         Holder<Object> holder = cachedInstances.get(name);
         if (holder == null) {
             cachedInstances.putIfAbsent(name, new Holder<>());
+            //TODO 这一句还不是null嘛，为什么还要再获取一遍
             holder = cachedInstances.get(name);
         }
+
+        /**
+         * 双重校验锁？
+         */
         // create a singleton if no instance exists
         Object instance = holder.get();
         if (instance == null) {
@@ -75,8 +93,14 @@ public final class ExtensionLoader<T> {
         return (T) instance;
     }
 
+    /**
+     * 根据名称创建
+     * @param name
+     * @return
+     */
     private T createExtension(String name) {
         // load all extension classes of type T from file and get specific one by name
+        // 如果名称不存在，则不能创建
         Class<?> clazz = getExtensionClasses().get(name);
         if (clazz == null) {
             throw new RuntimeException("No such extension of name " + name);
@@ -93,6 +117,10 @@ public final class ExtensionLoader<T> {
         return instance;
     }
 
+    /**
+     * 获取所有
+     * @return
+     */
     private Map<String, Class<?>> getExtensionClasses() {
         // get the loaded extension class from the cache
         Map<String, Class<?>> classes = cachedClasses.get();
@@ -103,6 +131,7 @@ public final class ExtensionLoader<T> {
                 if (classes == null) {
                     classes = new HashMap<>();
                     // load all extensions from our extensions directory
+                    // 从我们的扩展目录加载所有扩展
                     loadDirectory(classes);
                     cachedClasses.set(classes);
                 }
@@ -111,6 +140,10 @@ public final class ExtensionLoader<T> {
         return classes;
     }
 
+    /**
+     * 从我们的扩展目录加载所有扩展
+     * @param extensionClasses
+     */
     private void loadDirectory(Map<String, Class<?>> extensionClasses) {
         String fileName = ExtensionLoader.SERVICE_DIRECTORY + type.getName();
         try {
@@ -128,6 +161,12 @@ public final class ExtensionLoader<T> {
         }
     }
 
+    /**
+     * 加载资源
+     * @param extensionClasses
+     * @param classLoader
+     * @param resourceUrl
+     */
     private void loadResource(Map<String, Class<?>> extensionClasses, ClassLoader classLoader, URL resourceUrl) {
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(resourceUrl.openStream(), UTF_8))) {
             String line;

@@ -20,8 +20,11 @@ public final class SingletonFactory {
         if (c == null) {
             throw new IllegalArgumentException();
         }
+
+        //检查该单例对象是否已经存在：有则直接返回；无则创建一个新的单例对象
         String key = c.toString();
         if (OBJECT_MAP.containsKey(key)) {
+            //cast()方法：将对象强制转换为由 Class 对象表示的类或接口。
             return c.cast(OBJECT_MAP.get(key));
         } else {
             return c.cast(OBJECT_MAP.computeIfAbsent(key, k -> {
